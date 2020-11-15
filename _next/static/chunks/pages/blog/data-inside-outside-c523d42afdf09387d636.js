@@ -1,0 +1,1 @@
+_N_E=(window.webpackJsonp_N_E=window.webpackJsonp_N_E||[]).push([[9],{"0hR1":function(n,i,o){"use strict";o.r(i),i.default=function(){return"This is a post"}},"69Zu":function(n,i,o){(window.__NEXT_P=window.__NEXT_P||[]).push(["/blog/data-inside-outside",function(){return o("0hR1")}])}},[["69Zu",0]]]);
