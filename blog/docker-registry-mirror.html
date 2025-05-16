@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link href="/static/styles.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>toni tienda</title>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-Z67DVHFVCM"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-Z67DVHFVCM", { page_path: window.location.pathname });
+    </script>
+  </head>
+  <body>
+    <header>
+      <div>
+        
+        <h2 style="width: 12rem; text-align: left">
+          
+          <a color="inherit" href="/blog">toni tienda</a>
+        </h2>
+        <div class="navbar-links">
+          
+          <button
+            tabindex="0"
+            type="button"
+            class="active"
+            
+          >
+            <a href="/blog" color="inherit">blog</a>
+          </button>
+          
+          <button
+            tabindex="0"
+            type="button"
+            
+          >
+            <a href="/projects" color="inherit">projects</a>
+          </button>
+          
+        </div>
+      </div>
+    </header>
+
+    <div class="container mx-auto px-4 pt-8"><div class="mb-8">
+  
+  <div class="mb-4 text-end">
+    <img
+      src="https://res.cloudinary.com/ddkok43g3/image/upload/w_auto,h_400,c_fill,g_auto,q_auto,f_auto/docker-registry-mirror.jpg"
+      alt=""
+      class="w-full h-[400px] object-cover rounded"
+    />
+
+    
+    <div class="mt-2">
+      
+        <a
+          href="tags/docker.html"
+          class="inline-block bg-[rgb(0,119,151)] text-white text-xs font-medium px-2 py-1 rounded me-1"
+        >
+          docker
+        </a>
+      
+        <a
+          href="tags/development.html"
+          class="inline-block bg-[rgb(0,119,151)] text-white text-xs font-medium px-2 py-1 rounded me-1"
+        >
+          development
+        </a>
+      
+        <a
+          href="tags/tools.html"
+          class="inline-block bg-[rgb(0,119,151)] text-white text-xs font-medium px-2 py-1 rounded me-1"
+        >
+          tools
+        </a>
+      
+    </div>
+
+    
+    <small class="text-gray-500 text-sm mt-2 inline-block">
+      Photo by
+      <a
+        href="https://unsplash.com/@guibolduc?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText"
+        class="underline hover:text-[rgb(0,119,151)]"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        "Guillaume Bolduc"
+      </a>
+    </small>
+  </div>
+
+  
+  <article class="post-content">
+    <h1 id="docker-registry-local-mirror">Docker Registry Local Mirror</h1>
+<h2 id="why-i-needed-it">Why I needed it</h2>
+<p>I recently started working on some personal projects to do and learn things that I had in my TODO list for a very long time.<br />
+One the moments when I work on it is during my (long) commuting times when I go to the office or somewhere else by train.<br />
+In order to get my docker images I need internet connection provided by my phone and it brings a couple of problems:</p>
+<ul>
+<li>I don't have a large amount of GB per month so I am exhausting my available data pretty soon.</li>
+<li>When I am in tunnels, etc. the connection is dropped.</li>
+</ul>
+<p>When docker images are new, there is no way to escape it, but I usually use the same docker images for the same projects. Once they<br />
+are downloaded there is no problem but I like keeping the amount of images in my system under control, so I want to be able to do:</p>
+<pre tabindex="0" style="background-color:#fff;"><code><span style="display:flex;"><span>docker rmi -f <span style="color:#000;font-weight:bold">$(</span>docker images -aq<span style="color:#000;font-weight:bold">)</span>
+</span></span></code></pre><p>often.</p>
+<p>I thought that if would be cool to have a mirror of the docker registry with the images I use so I can keep running this command and <code>pull</code> the images<br />
+from my computer.</p>
+<p>That's why I decided to try out and add a docker registri mirror in my machine. And it turned out much easier than I expected.</p>
+<h2 id="how-it-works">How it works</h2>
+<!-- raw HTML omitted -->
+<pre><code class="language-mermaid">sequenceDiagram
+
+actor me
+participant DockerDaemon
+participant RegistryMirror
+participant DockerRegistry
+
+
+me -&gt;&gt;+ DockerDaemon: docker-compose(up)
+DockerDaemon -&gt;&gt; RegistryMirror: start
+DockerDaemon --&gt;&gt;- me: ok
+
+rect rgb(200,230,250)
+    note right of me: Online / First pull
+
+    me -&gt;&gt;+ DockerDaemon: pull(ubuntu)
+    DockerDaemon -&gt;&gt; RegistryMirror: pull(ubuntu)
+    RegistryMirror -&gt;&gt; DockerRegistry: pull(ubuntu)
+    DockerRegistry --&gt;&gt; RegistryMirror: ubuntu
+    RegistryMirror -&gt;&gt; RegistryMirror: store(ubuntu)
+    RegistryMirror --&gt;&gt; DockerDaemon: ubuntu
+    DockerDaemon --&gt;&gt; me: 
+end
+
+rect rgb(200,230,250)
+    note right of me: Offline / Second pull
+
+    me -&gt;&gt;+ DockerDaemon: pull(ubuntu)
+    DockerDaemon -&gt;&gt; RegistryMirror: pull(ubuntu)
+    RegistryMirror --&gt;&gt; DockerDaemon: ubuntu
+    DockerDaemon --&gt;&gt; me: 
+end
+
+rect rgb(200,230,250)
+    note right of me: Offline / First pull
+
+    me -&gt;&gt;+ DockerDaemon: pull(alpine)
+    DockerDaemon -&gt;&gt; RegistryMirror: pull(alpine)
+    RegistryMirror -x DockerRegistry: pull(alpine)
+    RegistryMirror --x DockerDaemon: error
+    DockerDaemon --x me: error
+end
+</code></pre>
+<!-- raw HTML omitted -->
+<p><img src="https://tsoobame.github.io/images/posts/docker-registry-mermaid.png" alt="docker registry sequence diagram" /><br />
+<!-- raw HTML omitted -->I did not configure mermaid in my blog yet. I will replace the image with the diagram when it is ready<!-- raw HTML omitted --></p>
+<h2 id="how-can-you-use-it">How can you use it</h2>
+<p>The code and the explanation on how to use it can be found in the <a href="https://github.com/tonitienda/docker-registry-mirror">docker-registry-mirror repository</a>.</p>
+<p>Happy (and low data usage) programming!</p>
+
+  </article>
+</div>
+</div>
+
+    <footer>
+      <div>
+        <p>&copy; 2025 toni tienda. All rights reserved.</p>
+      </div>
+    </footer>
+  </body>
+</html>
